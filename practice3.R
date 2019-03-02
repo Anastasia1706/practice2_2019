@@ -37,11 +37,11 @@ DT.import          # удобный просмотр объекта data.table
 unique(DT.import$Period.Desc)
 #фильтруем данные для получения необходимого среза данных
 (inform <- data.table(filter(DT.import, startsWith(Period.Desc, "September ") | startsWith(Period.Desc, "October ")|startsWith(Period.Desc, "November ") 
-                |startsWith(Period.Desc, "December "))))
+                             |startsWith(Period.Desc, "December "))))
 #(data <- filter(DT.import, grepl("September ", Period.Desc)))
-           
 
-#провери количество пропусков
+
+#проверим количество пропусков
 na.num <- apply(inform, 2, function(x) length(which(is.na(x)))) 
 sort(na.num[na.num > 0], decreasing = T) #получили один пропуск
 
@@ -52,11 +52,11 @@ sort(na.num[na.num > 0], decreasing = T) #получили один пропус
 inform[, Netweight.kg := as.double(Netweight.kg) ]
 # считаем медианы и округляем до целого, как исходные данные
 inform[, round(median(.SD$Netweight.kg, na.rm = T), 0),
-          by = Year]
+       by = Year]
 # сначала копируем все значения
 inform[, Netweight.kg.median := round(median(.SD$Netweight.kg,
-                                                na.rm = T), 0),
-          by = Year] 
+                                             na.rm = T), 0),
+       by = Year] 
 
 # затем заменяем пропуски на медианы
 inform[!is.na(Netweight.kg), Netweight.kg.median := Netweight.kg] 
@@ -64,6 +64,32 @@ inform[!is.na(Netweight.kg), Netweight.kg.median := Netweight.kg]
 # смотрим результат
 inform[, Netweight.kg, Netweight.kg.median]
 inform[is.na(Netweight.kg), Year, Netweight.kg.median]
+
+#Разделим страны по группам
+unique(DT.import$Reporter)
+#страны таможенного союза
+customs_union <- c('Armenia',"Belarus", "Kazakhstan", "Kyrgyzstan", "Russian Federation")
+#страны СНГ, не входящий в таможенный союз
+cis <- c("Azerbaijan")
+#остальные страны
+other_countries <- c("EU-27","Finland","Georgia","Germany","United States of America",
+                     "Estonia","Ukraine","Lithuania","Latvia","Mongolia","New Zealand",
+                     "United Arab Emirates","Slovenia","Egypt")
+cls <- palette(rainbow(3))
+#(inform.customs_union <- filter(inform, Reporter=='Armenia'|Reporter=="Belarus"|
+#                                  Reporter=="Kazakhstan"|Reporter=="Kyrgyzstan"|
+#                                  Reporter=="Russian Federation"))
+#plot(x=inform.customs_union$Year, y=inform.customs_union$Netweight.kg.median)
+
+#сделаем поле Reporter ключевым, чтобы сделать возможной фильтоацию
+setkey(inform, Reporter)
+#inform.customs_union <- inform[c('Armenia',"Belarus", 
+#                                 "Kazakhstan", "Kyrgyzstan", "Russian Federation")]
+
+#формируем таблицы по признаку принадлежности стран к тому или иному союзу
+inform.customs_union <- inform[customs_union]
+inform.cis <- inform[cis]
+inform.other_countries <- inform[other_countries]
 
 
  
